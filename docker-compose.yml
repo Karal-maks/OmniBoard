@@ -1,0 +1,34 @@
+services:
+  web-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongo-db:27017/omniboard
+      - PG_URI=postgresql://postgres:secret@postgres-db:5432/omniboard
+    depends_on:
+      - mongo-db
+      - postgres-db
+
+  mongo-db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  postgres-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: omniboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  mongodata:
+  pgdata:

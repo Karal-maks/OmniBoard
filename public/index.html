@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniBoard — Cybernetic Polyglot Command Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="cyber-grid-overlay"></div>
+    <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="logo-icon">🛢️</div>
+                <div>
+                    <h1>OmniBoard <span class="badge">Karal Mak's Project</span></h1>
+                    <p>Real-Time Polyglot Persistence & Telemetry Command Center</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="pulse-dot"></span>
+                <span id="connectionStatus">WebSockets Live</span>
+            </div>
+        </header>
+
+        <!-- TOP METRICS GRID -->
+        <section class="metrics-top-grid">
+            <div class="metric-card sql-glow">
+                <span class="label">PostgreSQL Rows (SQL)</span>
+                <span id="pgCount" class="value">0</span>
+                <span id="pgLatVal" class="sub">Latency: -- ms</span>
+            </div>
+            <div class="metric-card nosql-glow">
+                <span class="label">MongoDB Documents (NoSQL)</span>
+                <span id="mongoCount" class="value">0</span>
+                <span id="mongoLatVal" class="sub">Latency: -- ms</span>
+            </div>
+            <div class="metric-card">
+                <span class="label">Active WebSocket Clients</span>
+                <span id="activeClients" class="value">0</span>
+                <span class="sub">Synced in real-time</span>
+            </div>
+            <div class="metric-card">
+                <span class="label">System Throughput</span>
+                <span id="throughput" class="value">0</span>
+                <span class="sub">Total operations logged</span>
+            </div>
+        </section>
+
+        <!-- MIDDLE CONTROLS & CLUSTER VISUALIZER MATRIX -->
+        <section class="middle-grid">
+            <div class="panel control-panel">
+                <h2>⚡ Operational Controls</h2>
+                <p>Dispatch asynchronous multi-model database transactions simultaneously across relational and document engines.</p>
+                <button id="runCheckBtn" class="cyber-btn">
+                    <span class="btn-glow"></span>
+                    EXECUTE TRANSACTION BLOCK
+                </button>
+                <div class="telemetry-subinfo">
+                    <span>CPU Load: <strong style="color: #34d399;">14%</strong></span>
+                    <span>Network I/O: <strong style="color: #38bdf8;">Nominal</strong></span>
+                </div>
+            </div>
+
+            <div class="panel health-panel">
+                <h2>🌐 Cluster Topology Map</h2>
+                <div class="cluster-topology">
+                    <div class="node-box">
+                        <span class="node-icon">🐘</span>
+                        <span class="node-name">Postgres-SQL</span>
+                        <span id="pgHealth" class="node-status healthy">HEALTHY</span>
+                    </div>
+                    <div class="connector-line">
+                        <div class="data-pulse"></div>
+                    </div>
+                    <div class="node-box hub">
+                        <span class="node-icon">⚡</span>
+                        <span class="node-name">WebSocket Hub</span>
+                        <span class="node-status healthy">STREAM ACTIVE</span>
+                    </div>
+                    <div class="connector-line">
+                        <div class="data-pulse"></div>
+                    </div>
+                    <div class="node-box">
+                        <span class="node-icon">🍃</span>
+                        <span class="node-name">Mongo-NoSQL</span>
+                        <span id="mongoHealth" class="node-status healthy">HEALTHY</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTTOM TABLES GRID -->
+        <section class="tables-bottom-grid">
+            <div class="panel table-panel">
+                <div class="table-header">
+                    <h3>PostgreSQL Recent Relational Logs</h3>
+                    <span class="engine-tag sql">SQL ENGINE</span>
+                </div>
+                <div class="table-container">
+                    <table id="pgTable">
+                        <thead>
+                            <tr><th>ID</th><th>Event Name</th><th>Metadata</th><th>Timestamp</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" class="empty">Awaiting stream packets...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel table-panel">
+                <div class="table-header">
+                    <h3>MongoDB Recent Document Store</h3>
+                    <span class="engine-tag nosql">NOSQL STORE</span>
+                </div>
+                <div class="table-container">
+                    <table id="mongoTable">
+                        <thead>
+                            <tr><th>ObjectID Hash</th><th>Event Name</th><th>Payload JSON</th><th>Timestamp</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" class="empty">Awaiting stream packets...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
