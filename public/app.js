@@ -1,4 +1,4 @@
-// Initialize WebSocket connection
+// Initialize Socket.io connection for Node.js backend
 const socket = io();
 
 socket.on('connect', () => {
