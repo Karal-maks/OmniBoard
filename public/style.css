@@ -280,3 +280,10 @@ th {
 }
 td { color: #d4d4d8; }
 td.empty { text-align: center; color: #71717a; font-style: italic; font-family: -apple-system, sans-serif; }
+/* Status and state styles used by app.js */
+.node-status.degraded { color: #f87171; }
+td.muted { color: #9ca3af; }
+td.json { color: #c084fc; font-size: 0.75rem; }
+.cyber-btn:disabled { opacity: 0.6; cursor: wait; }
+body.offline .pulse-dot { background: #f87171; animation: none; }
+body.offline #connectionStatus { color: #f87171; }

@@ -1,33 +1,52 @@
+# Copy .env.example to .env and set real passwords before running:
+#   cp .env.example .env && docker compose up --build
 services:
   web-server:
     build: .
     ports:
-      - "8080:8080"
+      - "${WEB_PORT:-8080}:8080"
     environment:
-      - PORT=8080
-      - MONGO_URI=mongodb://mongo-db:27017/omniboard
-      - PG_URI=postgresql://postgres:secret@postgres-db:5432/omniboard
+      PORT: 8080
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo-db:27017/omniboard?authSource=admin
+      PG_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/omniboard
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      RETENTION_HOURS: ${RETENTION_HOURS:-24}
     depends_on:
-      - mongo-db
-      - postgres-db
+      mongo-db:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
 
+  # Databases are reachable only on the internal compose network (no host ports)
   mongo-db:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD in .env}
     volumes:
       - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   postgres-db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: omniboard
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d omniboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
 volumes:
   mongodata:

@@ -8,7 +8,8 @@
 </head>
 <body>
     <div class="cyber-grid-overlay"></div>
-    <!-- HEADER -->
+    <div class="dashboard-wrapper">
+        <!-- HEADER -->
         <header class="dashboard-header">
             <div class="header-left">
                 <div class="logo-icon">🛢️</div>
@@ -19,7 +20,7 @@
             </div>
             <div class="header-status">
                 <span class="pulse-dot"></span>
-                <span id="connectionStatus">WebSockets Live</span>
+                <span id="connectionStatus">Connecting...</span>
             </div>
         </header>
 
@@ -41,9 +42,9 @@
                 <span class="sub">Synced in real-time</span>
             </div>
             <div class="metric-card">
-                <span class="label">System Throughput</span>
+                <span class="label">Writes Since Start</span>
                 <span id="throughput" class="value">0</span>
-                <span class="sub">Total operations logged</span>
+                <span class="sub">Successful inserts, both engines</span>
             </div>
         </section>
 
@@ -52,13 +53,10 @@
             <div class="panel control-panel">
                 <h2>⚡ Operational Controls</h2>
                 <p>Dispatch asynchronous multi-model database transactions simultaneously across relational and document engines.</p>
-                <button id="runCheckBtn" class="cyber-btn">
-                    <span class="btn-glow"></span>
-                    EXECUTE TRANSACTION BLOCK
-                </button>
+                <button id="runCheckBtn" class="cyber-btn" type="button">EXECUTE TRANSACTION BLOCK</button>
                 <div class="telemetry-subinfo">
-                    <span>CPU Load: <strong style="color: #34d399;">14%</strong></span>
-                    <span>Network I/O: <strong style="color: #38bdf8;">Nominal</strong></span>
+                    <span>Host CPU: <strong id="cpuLoad" style="color: #34d399;">--</strong></span>
+                    <span>Server Memory: <strong id="memUsage" style="color: #38bdf8;">--</strong></span>
                 </div>
             </div>
 
@@ -68,7 +66,7 @@
                     <div class="node-box">
                         <span class="node-icon">🐘</span>
                         <span class="node-name">Postgres-SQL</span>
-                        <span id="pgHealth" class="node-status healthy">HEALTHY</span>
+                        <span id="pgHealth" class="node-status">--</span>
                     </div>
                     <div class="connector-line">
                         <div class="data-pulse"></div>
@@ -84,7 +82,7 @@
                     <div class="node-box">
                         <span class="node-icon">🍃</span>
                         <span class="node-name">Mongo-NoSQL</span>
-                        <span id="mongoHealth" class="node-status healthy">HEALTHY</span>
+                        <span id="mongoHealth" class="node-status">--</span>
                     </div>
                 </div>
             </div>

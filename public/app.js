@@ -1,80 +1,117 @@
-// Initialize Socket.io connection for Node.js backend
+'use strict';
+
 const socket = io();
+const $ = (id) => document.getElementById(id);
+
+const BUTTON_LABEL = 'EXECUTE TRANSACTION BLOCK';
+
+function setText(id, value) {
+  const el = $(id);
+  if (el) el.textContent = value;
+}
+
+function setStatus(id, status) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = String(status || 'Unknown').toUpperCase();
+  el.classList.toggle('healthy', status === 'Healthy');
+  el.classList.toggle('degraded', status !== 'Healthy');
+}
+
+// Build table rows with textContent only, so database values can never inject HTML
+function renderRows(tbody, items, toCells) {
+  if (!tbody) return;
+  tbody.replaceChildren();
+  if (!items || items.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.className = 'empty';
+    td.textContent = 'No records';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  for (const item of items) {
+    const tr = document.createElement('tr');
+    for (const cell of toCells(item)) {
+      const td = document.createElement('td');
+      td.textContent = cell.text;
+      if (cell.title) td.title = cell.title;
+      if (cell.className) td.className = cell.className;
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+const time = (value) => new Date(value).toLocaleTimeString();
+const show = (value, suffix = '') => (value === null || value === undefined ? '--' : `${value}${suffix}`);
 
 socket.on('connect', () => {
-    console.log('✅ Success: Connected to WebSocket server!');
+  setText('connectionStatus', 'WebSockets Live');
+  document.body.classList.remove('offline');
+});
+
+socket.on('disconnect', () => {
+  setText('connectionStatus', 'Disconnected - reconnecting...');
+  document.body.classList.add('offline');
 });
 
 socket.on('connect_error', (err) => {
-    console.error('❌ WebSocket Connection Error:', err);
+  console.error('WebSocket connection error:', err.message);
 });
 
 socket.on('db-update', (data) => {
-    console.log('📥 Received db-update packet:', data);
+  if (!data) return;
 
-    if (!data) return;
+  setText('pgCount', show(data.postgresLogsCount));
+  setText('pgLatVal', `Latency: ${show(data.postgresLatency, ' ms')}`);
+  setText('mongoCount', show(data.mongoLogsCount));
+  setText('mongoLatVal', `Latency: ${show(data.mongoLatency, ' ms')}`);
+  setText('activeClients', show(data.activeConnections));
+  setText('throughput', show(data.totalWrites));
 
-    // 1. Update Top Metrics Cards safely
-    const pgCount = document.getElementById('pgCount');
-    const pgLatVal = document.getElementById('pgLatVal');
-    const mongoCount = document.getElementById('mongoCount');
-    const mongoLatVal = document.getElementById('mongoLatVal');
-    const activeClients = document.getElementById('activeClients');
-    const throughput = document.getElementById('throughput');
+  if (data.host) {
+    setText('cpuLoad', `${data.host.cpuPercent}%`);
+    setText('memUsage', `${data.host.memoryMB} MB`);
+  }
 
-    if (pgCount) pgCount.innerText = data.postgresLogsCount ?? 0;
-    if (pgLatVal) pgLatVal.innerText = `Latency: ${data.postgresLatency ?? 0} ms`;
-    
-    if (mongoCount) mongoCount.innerText = data.mongoLogsCount ?? 0;
-    if (mongoLatVal) mongoLatVal.innerText = `Latency: ${data.mongoLatency ?? 0} ms`;
-    
-    if (activeClients) activeClients.innerText = data.activeConnections ?? 1;
-    if (throughput) throughput.innerText = data.totalThroughput ?? 0;
+  setStatus('pgHealth', data.postgresStatus);
+  setStatus('mongoHealth', data.mongoDbStatus);
 
-    // 2. Update Health Status Badges
-    const pgHealth = document.getElementById('pgHealth');
-    const mongoHealth = document.getElementById('mongoHealth');
-    if (pgHealth) pgHealth.innerText = data.postgresStatus || 'Healthy';
-    if (mongoHealth) mongoHealth.innerText = data.mongoDbStatus || 'Healthy';
+  renderRows(document.querySelector('#pgTable tbody'), data.recentPostgres, (row) => [
+    { text: String(row.id) },
+    { text: row.event_name },
+    { text: row.metadata || 'N/A', className: 'muted' },
+    { text: time(row.created_at) },
+  ]);
 
-    // 3. Populate PostgreSQL Table
-    const pgTbody = document.querySelector('#pgTable tbody');
-    if (pgTbody && data.recentPostgres && data.recentPostgres.length > 0) {
-        pgTbody.innerHTML = data.recentPostgres.map(row => `
-            <tr>
-                <td>${row.id}</td>
-                <td>${row.event_name}</td>
-                <td style="color: #9ca3af;">${row.metadata || 'N/A'}</td>
-                <td>${new Date(row.created_at).toLocaleTimeString()}</td>
-            </tr>
-        `).join('');
-    }
-
-    // 4. Populate MongoDB Table
-    const mongoTbody = document.querySelector('#mongoTable tbody');
-    if (mongoTbody && data.recentMongo && data.recentMongo.length > 0) {
-        mongoTbody.innerHTML = data.recentMongo.map(doc => `
-            <tr>
-                <td title="${doc._id}">${doc._id.substring(0, 8)}...</td>
-                <td>${doc.eventName}</td>
-                <td style="color: #c084fc; font-family: monospace; font-size: 0.75rem;">${JSON.stringify(doc.payload)}</td>
-                <td>${new Date(doc.createdAt).toLocaleTimeString()}</td>
-            </tr>
-        `).join('');
-    }
+  renderRows(document.querySelector('#mongoTable tbody'), data.recentMongo, (doc) => [
+    { text: `${String(doc._id).substring(0, 8)}...`, title: String(doc._id) },
+    { text: doc.eventName },
+    { text: JSON.stringify(doc.payload), className: 'json' },
+    { text: time(doc.createdAt) },
+  ]);
 });
 
-// Manual transaction dispatch button
-const runCheckBtn = document.getElementById('runCheckBtn');
+const runCheckBtn = $('runCheckBtn');
 if (runCheckBtn) {
-    runCheckBtn.addEventListener('click', async () => {
-        runCheckBtn.innerText = 'Dispatching...';
-        try {
-            await fetch('/api/system-check');
-        } catch (error) {
-            console.error('Manual transaction failed:', error);
-        } finally {
-            runCheckBtn.innerText = '⚡ Execute Manual Transaction';
-        }
-    });
+  runCheckBtn.addEventListener('click', async () => {
+    runCheckBtn.disabled = true;
+    runCheckBtn.textContent = 'DISPATCHING...';
+    try {
+      const res = await fetch('/api/system-check', { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        runCheckBtn.textContent = body.error ? `FAILED: ${body.error}` : `FAILED (${res.status})`;
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    } catch (error) {
+      console.error('Manual transaction failed:', error);
+    } finally {
+      runCheckBtn.textContent = BUTTON_LABEL;
+      runCheckBtn.disabled = false;
+    }
+  });
 }
